@@ -1,58 +1,77 @@
-package File::Sort;
-use Carp;
+#!perl
+use Config;
+use File::Basename qw(&basename &dirname);
+use Cwd;
+
+$origdir = cwd;
+chdir dirname($0);
+$file = basename($0, '.PL');
+$file .= '.com' if $^O eq 'VMS';
+
+open OUT,">$file" or die "Can't create $file: $!";
+
+print "Extracting $file (with variable substitutions)\n";
+
+print OUT <<"!GROK!THIS!";
+$Config{startperl} -sw-
+!GROK!THIS!
+
+# In the following, perl variables are not expanded during extraction.
+
+print OUT <<'!NO!SUBS!';
+# perl implementation of sort(1), by pudge@pobox.com
+# see POD below for more information
+
+use Getopt::Long qw(GetOptions);
 use Fcntl qw(O_RDONLY O_WRONLY O_EXCL O_CREAT);
 use Symbol qw(gensym);
 use strict;
 use locale;
 use vars qw($VERSION *sortsub *sort1 *sort2 *map1 *map2 %fh);
 
-require Exporter;
-use vars qw(@ISA @EXPORT @EXPORT_OK);
-@ISA = qw(Exporter);
-@EXPORT = ();
-@EXPORT_OK = qw(sort_file);
-$VERSION = '0.80';
+$VERSION = '0.67';
+Getopt::Long::config('bundling');  # -cmu == -c -m -u
 
-sub sort_file {
-    my @args = @_;
-    if (ref($args[0])) {
+{
+    my(%o, @argv, @pos);
 
-        # fix pos to look like k
-        if (exists($args[0]->{'pos'})) {
-            my @argv;
-            my $pos = $args[0]->{'pos'};
-
-            if (!ref($pos)) {
-                $pos = [$pos];
-            }
-
-            if (!exists($args[0]->{'k'})) {
-                $args[0]->{'k'} = [];
-            } elsif (!ref($args[0]->{'k'})) {
-                $args[0]->{'k'} = [$args[0]->{'k'}];
-            }
-
-            for (@$pos) {
-                my $n;
-                if (   /^\+(\d+)(?:\.(\d+))?([bdfinr]+)?
-                   (?:\s+\-(\d+)(?:\.(\d+))?([bdfinr]+)?)?$/x) {
-                    $n = $1 + 1;
-                    $n .= '.' . ($2 + 1) if defined $2;
-                    $n .= $3 if $3;
-
-                    if (defined($4)) {
-                        $n .= "," . (defined $5 ? ($4 + 1) . ".$5" : $4);
-                        $n .= $6 if $6;
-                    }
-                    push @{$args[0]->{'k'}}, $n;
-                }
-            }
-
+    # take care of +pos1 -pos2 now instead of in getopts
+    foreach my $argv (0..$#ARGV) {
+        $_ = $ARGV[$argv];
+        my $n;
+        if (/^\+(\d+)(?:\.(\d+))?([bdfinr]+)?/) {
+           $n = $1 + 1;
+           $n .= '.' . ($2 + 1) if defined $2;
+           $n .= $3 if $3;
+           push @argv, $argv;
+        } else {
+          next;
         }
-        _sort_file(@args);
-    } else {
-        _sort_file({I=>$args[0], o=>$args[1]});
+
+        $_ = $ARGV[$argv + 1];
+        if (/^\-(\d+)(?:\.(\d+))?([bdfinr]+)?/) {
+           $n .= "," . (defined $2 ? ($1 + 1) . ".$2" : $1);
+           $n .= $3 if $3;
+           push @argv, $argv;
+        }
+
+        push @pos, $n;
     }
+
+    # delete used elements from @ARGV
+    for (reverse @argv) {
+        splice(@ARGV, $_, 1);
+    }
+
+    GetOptions(\%o, 'k=s@', qw(c m u d f i n r b D),
+        map {"$_=s"} qw(X t y F o R));
+    push @{$o{'k'}}, @pos if @pos;   # add pos stuff back
+    @ARGV = '-' unless @ARGV;
+    $o{I} = [@ARGV];    # input files
+
+    my $exit = _sort_file(\%o);
+    warn "Exit status is $exit\n" if $exit != 1;
+    exit($exit == 1 ? $exit ? 0 : $exit : 1);
 }
 
 sub _sort_file {
@@ -602,29 +621,23 @@ __END__
 
 =head1 NAME
 
-File::Sort - Sort a file or merge sort multiple files
+sort - sort or merge text files
 
 
 =head1 SYNOPSIS
 
-  use File::Sort qw(sort_file);
-  sort_file({
-    I => [qw(file_1 file_2)],
-    o => 'file_new', k => '5.3,5.5rn', -t => '|'
-  });
+  sort [-cmudfinrbD] [-o output_file]
+    [-t field_separator] [-X regex_field_separator] [-R record_separator]
+    [-k pos1[,pos2]] [+pos1 [-pos2]]
+    [-y max_records] [-F max_files]
+    input_file1 [input_file2 ...]
 
-  sort_file('file1', 'file1.sorted');
+  See docs for more information.
 
 
 =head1 DESCRIPTION
 
-***DANGER, WILL ROBINSON***
-
-The interface has changed in some significant ways.
-See L<"HISTORY">.
-
-
-This module sorts text files by lines (or records).  Comparisons
+The sort utility sorts text files by lines (or records).  Comparisons
 are based on one or more sort keys extracted from each line of input,
 and are performed lexicographically. By default, if keys are not given,
 sort regards each input line as a single field.  The sort is a merge
@@ -633,24 +646,7 @@ sort.  If you don't like that, feel free to change it.
 
 =head2 Options
 
-The following options are available, and are passed in the hash
-reference passed to the function in the format:
-
-  OPTION => VALUE
-
-Where an option can take multiple values (like C<I>, C<k>, and C<pos>),
-values may be passed via an anonymous array:
-
-  OPTION => [VALUE1, VALUE2]
-
-Where the OPTION is a switch, it should be passed a boolean VALUE
-of 1 or 0.
-
-This interface will always be supported, though a more perlish
-interface may be offered in the future, as well.  This interface
-is basically a mapping of the command-line options to the Unix
-sort utility.
-
+The following options are available:
 
 =over 4
 
@@ -795,7 +791,7 @@ comparison.  The order in which lines that still compare equal are
 written is unspecified.
 
 
-=item C<pos> I<+pos1 [-pos2]>
+=item I<+pos1 [-pos2]>
 
 Similar to B<k>, these are mostly obsolete switches, but some people
 like them and want to use them.  Usage is:
@@ -813,12 +809,12 @@ It is best if you Don't Do That.  Pick one and stick with it.
 
 Here are some equivalencies:
 
-    pos => '+1 -2'              ->  k => '2,2'
-    pos => '+1.1 -1.2'          ->  k => '2.2,2.2'
-    pos => ['+1 -2', '+3 -5']   ->  k => ['2,2', '4,5']
-    pos => ['+2', '+0b -1']     ->  k => ['3', '1b,1']
-    pos => '+2.1 -2.4'          ->  k => '3.2,3.4'
-    pos => '+2.0 -3.0'          ->  k => '3.1,4.0'
+    +1 -2           =>  -k 2,2
+    +1.1 -1.2       =>  -k 2.2,2.2
+    +1 -2 +3 -5     =>  -k 2,2 -k 4,5
+    +2 +0b -1       =>  -k 3 -k 1b,1
+    +2.1 -2.4       =>  -k 3.2,3.4
+    +2.0 -3.0       =>  -k 3.1,4.0
 
 =back
 
@@ -832,41 +828,33 @@ This includes B<T> and B<z>.
 
 =head1 EXAMPLES
 
-Sort file by straight string compare of each line, sending
-output to STDOUT.
+Sort file by straight string compare of each line.
 
-    use File::Sort qw(sort_file);
-    sort_file('file');
+    sort file
 
 Sort contents of file by second key in file.
 
-    sort_file({k => 2, I => 'file'});
+    sort -k 2 file
 
 Sort, in reverse order, contents of file1 and file2, placing
 output in outfile and using second character of second field
 as the sort key.
 
-    sort_file({
-        r => 1, k => '2.2,2.2', o => 'outfile',
-        I => ['file1', 'file2']
-    });
+    sort -r -k 2.2,2.2 -o outfile file1 file2
 
 Same sort but sorting numerically on characters 3 through 5 of
 the fifth field first, and only return records with unique keys.
 
-    sort_file({
-        u => 1, r => 1, k => ['5.3,5.5rn', '2.2,2.2'],
-        o => 'outfile', I => ['file1', 'file2']
-    });
+    sort -u -r -k 5.3,5.5rn -k 2.2,2.2 -o outfile file1 file2
 
 Print passwd(4) file sorted by numeric user ID.
 
-    sort_file({t => ':', k => '3n', I => '/etc/passwd'});
+    sort -t : -k 3n /etc/passwd
 
 For the anal sysadmin, check that passwd(4) file is sorted by numeric
 user ID.
 
-    sort_file({c => 1, t => ':', k => '3n', I => '/etc/passwd'});
+    sort -c -t : -k 3n /etc/passwd
 
 
 =head1 ENVIRONMENT
@@ -898,11 +886,6 @@ options.
 =back
 
 
-=head1 EXPORT
-
-Exports C<sort_file> on request.
-
-
 =head1 TODO
 
 =over 4
@@ -913,8 +896,6 @@ Exports C<sort_file> on request.
 
 =item Do bytes instead of lines
 
-=item Whoops, fix input via STDIN
-
 =back
 
 
@@ -922,82 +903,56 @@ Exports C<sort_file> on request.
 
 =over 4
 
-=item v0.90, Friday, April 30, 1999
+=item v0.67 Friday, April 30, 1999
 
-Complete rewrite.  Took the code from this module to write sort
-utility for PPT project, then brought changes back over.  As a result
-the interface has changed slightly, mostly in regard to what letters
-are used for options, but there are also some key behavioral differences.
-If you need the old interface, the old module will remain on CPAN, but
-will not be supported.  Sorry for any inconvenience this may cause.
-The good news is that it should not be too difficult to update your
-code to use the new interface.
+Merged sources back into File::Sort module.
+
+Fixed a few bugs, including accepting input via STDIN if
+no input files given.
 
 
-=item v0.20
+=item v0.66 Monday, April 5, 1999
 
-Fixed bug with unique option (didn't work :).
+Added B<+pos1> B<-pos2>, and B<X> (regex field separator).
 
-Switched to sysopen for better portability.
-
-Print to STDOUT if no output file supplied.
-
-Added c option to check sorting.
+More minor fixes to sort subs.
 
 
-=item v0.18 (31 January 1998)
+=item v0.65 Sunday, April 4, 1999
 
-Tests 3 and 4 failed because we hit the open file limit in the
-standard Windows port of perl5.004_02 (50).  Adjusted the default
-for total number of temp files from 50 to 40 (leave room for other open
-files), changed docs.  (Mike Blazer, Gurusamy Sarathy)
+Added B<b> and B<R> (record separator).
 
-=item v0.17 (30 December 1998)
+Made more fixes to sort subs.  Seems to be getting pretty stable now,
+after some serious rewriting.  Borrowed several ideas from Albert
+Dvornik's implementation.
 
-Fixed bug in C<_merge_files> that tried to C<open> a passed
-C<IO::File> object.
+Tidied up docs.
 
-Fixed up docs and did some more tests and benchmarks.
-
-=item v0.16 (24 December 1998)
-
-One year between releases was too long.  I made changes Miko O'Sullivan
-wanted, and I didn't even know I had made them.
-
-Also now use C<IO::File> to create temp files, so the TMPDIR option is
-no longer supported.  Hopefully made the whole thing more robust and
-faster, while supporting more options for sorting, including delimited
-sorts, and arbitrary sorts.
-
-Made CHUNK default a lot larger, which improves performance.  On
-low-memory systems, or where (e.g.) the MacPerl binary is not allocated
-much RAM, it might need to be lowered.
+Added usage() function.
 
 
-=item v0.11 (04 January 1998)
+=item v0.60 Saturday, April 3, 1999
 
-More cleanup; fixed special case of no linebreak on last line; wrote test 
-suite; fixed warning for redefined subs (sort1 and sort2).
+Rewrote most of the sort sub stuff to be more efficient and in some 
+cases to just make it work right.
 
-=item v0.10 (03 January 1998)
+Can now use multiple B<k> switches.  Need Getopt::Long 2.17 (comes with
+perl 5.005_02).  Earlier versions of module work?
 
-Some cleanup; made it not subject to system file limitations; separated 
-many parts out into separate functions.
+Still need to go back and implement B<+pos1> B<-pos2> if I feel like it.
 
-=item v0.03 (23 December 1997)
 
-Added reverse and numeric sorting options.
+=item v0.51 Tuesday, March 30, 1999
 
-=item v0.02 (19 December 1997)
+First round of fixes.
 
-Added unique and merge-only options.
 
-=item v0.01 (18 December 1997)
+=item v0.50 Monday, March 29, 1999
 
-First release.
+Rewrote much of the code for the PPT project.  Will integrate changes
+back into the original source, the File::Sort module.
 
 =back
-
 
 =head1 THANKS
 
@@ -1019,18 +974,26 @@ Gurusamy Sarathy E<lt>gsar@activestate.comE<gt>.
 
 Chris Nandor E<lt>pudge@pobox.comE<gt>, http://pudge.net/
 
-Copyright (c) 1999 Chris Nandor.  All rights reserved.  This program is
-free software; you can redistribute it and/or modify it under the terms
-of the Artistic License, distributed with Perl.
+Copyright (c) 1999 Chris Nandor.
+
+This program is free and open software. You may use, modify,
+distribute, and sell this program (and any modified variants) in any
+way you wish, provided you do not restrict others from doing the same.
 
 
 =head1 VERSION
 
-v0.80, Friday, April 30, 1999
-
+v0.67 Friday, April 30, 1999
 
 =head1 SEE ALSO
 
-sort(1), locale, PPT project, <URL:http://language.perl.com/ppt/>.
+PPT project, <URL:http://language.perl.com/ppt/>,
+sort(1), File::Sort, locale.
 
 =cut
+!NO!SUBS!
+
+close OUT or die "Can't close $file: $!";
+chmod 0755, $file or die "Can't reset permissions for $file: $!\n";
+exec("$Config{'eunicefix'} $file") if $Config{'eunicefix'} ne ':';
+chdir $origdir;

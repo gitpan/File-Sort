@@ -11,7 +11,7 @@ use vars qw(@ISA @EXPORT @EXPORT_OK);
 @ISA = qw(Exporter);
 @EXPORT = ();
 @EXPORT_OK = qw(sort_file);
-$VERSION = '0.80';
+$VERSION = '0.90';
 
 sub sort_file {
     my @args = @_;
@@ -1026,7 +1026,7 @@ of the Artistic License, distributed with Perl.
 
 =head1 VERSION
 
-v0.80, Friday, April 30, 1999
+v0.90, Friday, April 30, 1999
 
 
 =head1 SEE ALSO

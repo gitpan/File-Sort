@@ -4,5 +4,5 @@ use ExtUtils::MakeMaker;
 # the contents of the Makefile that is written.
 WriteMakefile(
     'NAME'	=> 'File::Sort',
-    'VERSION_FROM' => 'lib/File/Sort.pm', # finds $VERSION
+    'VERSION_FROM' => 'Sort.pm', # finds $VERSION
 );
