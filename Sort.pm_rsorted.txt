@@ -15,7 +15,7 @@ will not be supported.  Sorry for any inconvenience this may cause.
 where field_start and field_end define a key field restricted to a
 wanted, and I didn't even know I had made them.
 values may be passed via an anonymous array:
-v0.91, Saturday, February 12, 2000
+v1.00, Tuesday, November 13, 2001
 utility for PPT project, then brought changes back over.  As a result
 user ID.
 use vars qw(@ISA @EXPORT_OK);
@@ -23,8 +23,9 @@ use vars qw($VERSION *sortsub *sort1 *sort2 *map1 *map2 %fh);
 use strict;
 use locale;
 use Symbol qw(gensym);
-use Fcntl qw(O_RDONLY O_WRONLY O_CREAT);
+use Fcntl qw(O_RDONLY O_WRONLY O_CREAT O_TRUNC);
 use Carp;
+up, you must call setlocale() for the new settings to take effect.  For
 to be part of a field (although it can be included in a sort key).  Each
 to a temp file.  Overriden by B<y> option.
 to a specific key (see B<k>), the specified ordering options override all
@@ -52,7 +53,7 @@ specified, blank characters are used as default field separators; each
 specified) and with all bytes in the lines significant to the
 sorts, and arbitrary sorts.
 sort.  If you don't like that, feel free to change it.
-sort(1), locale, PPT project, <URL:http://language.perl.com/ppt/>.
+sort(1), locale, PPT project, <URL:http://sf.net/projects/ppt/>.
 sort utility.
 sort regards each input line as a single field.  The sort is a merge
 require Exporter;
@@ -86,12 +87,12 @@ like them and want to use them.  Usage is:
 it specifes the last position to NOT be included.  Also, numbers
 it is attached. The other modifiers behave like the corresponding
 is used.  When there are multiple keys fields, later keys are compared
+is free software; you can redistribute it and/or modify it under the terms
 is basically a mapping of the command-line options to the Unix
 interface may be offered in the future, as well.  This interface
 instead.  Do not escape any characters (C</> characters need to be
 input file is sorted.
 global ordering options for that key.
-free software; you can redistribute it and/or modify it under the terms
 format of this definition is:
 for total number of temp files from 50 to 40 (leave room for other open
 for the purposes of comparison.
@@ -102,6 +103,7 @@ field_start or field_end option argument (see below).
 field).  See L<perlre> and L<perlfunc/split>.
 field ordering rules are applied globally to all sort keys. When attached
 faster, while supporting more options for sorting, including delimited
+example:
 escaped internally, and will be escaped for you).
 equal are ordered as if none of the options B<d>, B<f>, B<i>, B<n>
 corresponding B<+pos1>.  The rest should be the same as the B<k> option.
@@ -137,7 +139,6 @@ This interface will always be supported, though a more perlish
 This includes B<T> and B<z>.
 The string matched by I<STRING> is not included in the fields
 The keydef argument is a restricted sort key field definition. The
-The interface has changed in some significant ways from 0.1x.
 The good news is that it should not be too difficult to update your
 The following options override the default ordering rules. When ordering
 The following options are available, and are passed in the hash
@@ -149,9 +150,9 @@ Sort, in reverse order, contents of file1 and file2, placing
 Sort file by straight string compare of each line, sending
 Sort contents of file by second key in file.
 Some cleanup; made it not subject to system file limitations; separated 
+Some cleanup.
 Similar to B<k>, these are mostly obsolete switches, but some people
 Send debugging information to STDERR.  Behavior subject to change.
-See L<"HISTORY">.
 Same sort but sorting numerically on characters 3 through 5 of
 Same as B<t>, but I<STRING> is interpreted as a Perl regular expression
 Rich Morin E<lt>rdm@cfcl.comE<gt>,
@@ -160,11 +161,13 @@ Removed O_EXCL flag from C<sort_file>.
 Record separator, defaults to newline.
 Print to STDOUT if no output file supplied.
 Print passwd(4) file sorted by numeric user ID.
+Played with somem of the -k options (Marco A. Romero).
 Paul Eckert E<lt>peckert@epicrealm.comE<gt>,
 Pass in the input file(s).  This can be either a single string with the
 Otherwise, the B<b> option can be attached indepently to each
 One year between releases was too long.  I made changes Miko O'Sullivan
 Occurrences of the B<k> option are significant in command line order. 
+Note that if you change the locale settings after the program has started
 More cleanup; fixed special case of no linebreak on last line; wrote test 
 Mixing B<+pos1> B<pos2> with B<k> is allowed, but will result in all of
 Miko O'Sullivan E<lt>miko@idocs.comE<gt>,
@@ -174,8 +177,10 @@ Maximum number of temp files to be held open at once.  Default to 40,
 Maximum number of open temp files to use before merging open temp
 Maximum number of lines (records) read before writing to temp file.
 Matthias Neeracher E<lt>neeri@iis.ee.ethz.chE<gt>,
+Marco A. Romero E<lt>mromero@iglou.comE<gt>,
 Made CHUNK default a lot larger, which improves performance.  On
 MAX_SORT_RECORDS environment variable.
+Long overdue release.
 It is best if you Don't Do That.  Pick one and stick with it.
 Ignores all characters that are non-printable, according to the current
 Ignore leading blank characters when determining the starting and ending
@@ -186,13 +191,15 @@ If no B<k> option is specified, a default sort key of the entire line
 If any modifier is attached to a field_start or a field_end, no option
 Hubert Toullec E<lt>Hubert.Toullec@wanadoo.frE<gt>.
 Here are some equivalencies:
-Gurusamy Sarathy E<lt>gsar@activestate.comE<gt>
+Gurusamy Sarathy E<lt>gsar@activestate.comE<gt>,
 Gene Hsu E<lt>gene@moreinfo.comE<gt>,
+Gael Marziou E<lt>gael_marziou@hp.comE<gt>,
 For the anal sysadmin, check that passwd(4) file is sorted by numeric
 Fixed up docs and did some more tests and benchmarks.
 Fixed bug with unique option (didn't work :).
 Fixed bug in sorting multiple files.  (Paul Eckert)
 Fixed bug in C<_merge_files> that tried to C<open> a passed
+Fix filehandle close test of STDOUT (Gael Marziou).
 First release.
 File::Sort - Sort a file or merge sort multiple files
 Exports C<sort_file> on request.
@@ -204,7 +211,7 @@ Determine the locale for the interpretation of sequences of bytes of
 Determine the locale for ordering rules.
 Default is 200,000. This may eventually change to be kbytes instead of
 Default is 200,000.  Maximum number of records to use before writing
-Copyright (c) 2000 Chris Nandor.  All rights reserved.  This program is
+Copyright (c) 1997-2001 Chris Nandor.  All rights reserved.  This program
 Consider all lower-case characters that have upper-case equivalents,
 Complete rewrite.  Took the code from this module to write sort
 Closed all files in test.pl so they could be unlinked on some
@@ -221,6 +228,7 @@ Albert Dvornik E<lt>bert@mit.eduE<gt>,
 Added unique and merge-only options.
 Added reverse and numeric sorting options.
 Added c option to check sorting.
+Add O_TRUNC to output open (D'oh!).
 @ISA = 'Exporter';
 @EXPORT_OK = 'sort_file';
 =over 4
@@ -228,6 +236,7 @@ Added c option to check sorting.
 =over 4
 =over 4
 =over 4
+=item v1.00, Tuesday, November 13, 2001
 =item v0.91, Saturday, February 12, 2000
 =item v0.90, Friday, April 30, 1999
 =item v0.20
@@ -239,7 +248,7 @@ Added c option to check sorting.
 =item v0.03 (23 December 1997)
 =item v0.02 (19 December 1997)
 =item v0.01 (18 December 1997)
-=item Tests fail on non-ASCII locales.
+=item Switch for turning off locale ... ?
 =item Performance hit with -u
 =item MAX_SORT_RECORDS
 =item MAX_SORT_FILES
@@ -265,6 +274,7 @@ Added c option to check sorting.
 =item C<I> I<INPUT>
 =item C<F> I<MAX_SORT_FILES>
 =item C<D>
+=item Better test suite
 =item Better debugging and error reporting
 =head2 Options
 =head2 Not Implemented
@@ -286,8 +296,7 @@ Added c option to check sorting.
 =back
 =back
 =back
-***DANGER, WILL ROBINSON***
-$VERSION = '0.91';
+$VERSION = '1.00';
 # take optional arrayref of handles of sorted files,
 # plus optional arrayref of sorted scalars
   });
@@ -300,7 +309,7 @@ $VERSION = '0.91';
     });
     } keys %oth;
     } elsif ($opts->{'m'}) {
-    } elsif (! ref($file)) {
+    } elsif (!ref $file) {
     } else {
     } else {
     } else {
@@ -322,6 +331,7 @@ $VERSION = '0.91';
     while (keys %fh) {
     while (<DATA>) {
     while (<DATA>) {
+    use POSIX 'locale_h';
     use File::Sort qw(sort_file);
     usage() unless @{$opts->{I}};
     sort_file({t => ':', k => '3n', I => '/etc/passwd'});
@@ -330,10 +340,12 @@ $VERSION = '0.91';
     sort_file({
     sort_file({
     sort_file('file');
-    select($oldfh);
-    seek($temp, 0, 0);  # might need to read back from it
-    seek($file, 0, 0);  # might need to read back from it
+    setlocale(LC_CTYPE, '');
+    setlocale(LC_COLLATE, '');
+    select $oldfh;
     seek DATA, 0, 0;
+    seek $temp, 0, 0;  # might need to read back from it
+    seek $file, 0, 0;  # might need to read back from it
     return \%opts;
     return 1;   # yay
     return $temp;
@@ -357,14 +369,14 @@ $VERSION = '0.91';
     my %opts = (
     my $u;
     my $temp = _get_temp() or die "Can't get temp file: $!";
-    my $oldfh = select($file);
+    my $oldfh = select $file;
     my $nok = shift;
     my $close = _merge_files($opts, \@fh, \@recs, $opts->{o});
     local $^W;
     local $\;   # don't mess up our prints
     local $/ = $opts->{R} ? $opts->{R} : "\n";
     local $/ = "\n";    # in case changed
-    if (ref($args[0])) {
+    if (ref $args[0]) {
     if ($topts->{K}) {
     if ($topts->{K}) {
     if ($opts->{c}) {
@@ -375,7 +387,7 @@ $VERSION = '0.91';
     for (qw(ksf ksc kff)) { #  kfc stays same
     field_start[.first_char][type][,field_end[.last_char][type]]
     die "Usage:$u";
-    close($close) unless $$close eq 'main::STDOUT'; # don't close STDOUT
+    close $close unless fileno($close) == fileno('STDOUT'); # don't close STDOUT
     _make_sort_sub($opts);
     _debug("\nDone!\n\n") if $opts->{D};
     _debug("\nCreating sorted $file ...\n") if $opts->{D};
@@ -391,14 +403,16 @@ $VERSION = '0.91';
     ${$_[0]}[-1] .= $/ if (${$_[0]}[-1] !~ m|$/$|);
     $u =~ s/\n//;
     $opts->{o}   = !$opts->{o} ? '' : $opts->{o};
-    $opts->{k} = $opts->{k} ? [$opts->{k}] : [] if !ref($opts->{k});
+    $opts->{k} = $opts->{k} ? [$opts->{k}] : [] if !ref $opts->{k};
     $opts->{K} = $opts->{k} ? 0 : 1;
     $opts->{I} = [$opts->{I}] unless ref $opts->{I};
     $opts->{F}   ||= $ENV{MAX_SORT_FILES}   || 40;      # default max files
     $opts->{'y'} ||= $ENV{MAX_SORT_RECORDS} || 200000;  # default max records
     $k =~ /^(\d+)(?:\.(\d+))?([bdfinr]+)?
     $fh{X} = shift @$recs if @$recs;
+    $ENV{LC_ALL} = $ENV{LANG} = '';
     # we need the options, filehandles, and output file
+    # use new ENV settings
     # their idea of 1 is not ours
     # set output and other defaults
     # set defaults at zero or undef
@@ -415,9 +429,11 @@ $VERSION = '0.91';
     # if merging sorted files
     # gurgle
     # get input files into anon array if not already
+    # get constants
     # file and get a reference to it
     # extra records, special X "handle"
     # except for b, flags on one apply to the other
+    # e.g., blank out locale
     # do the merge thang, uh huh, do the merge thang
     # arbitrarily named keys, store handles as values
     # add new record separator if not one there
@@ -449,7 +465,7 @@ $VERSION = '0.91';
         {
         while (defined(my $rec = <F>)) {
         u => 1, r => 1, k => ['5.3,5.5rn', '2.2,2.2'],
-        sysopen($tfh, $file, O_WRONLY|O_CREAT)
+        sysopen($tfh, $file, O_WRONLY|O_CREAT|O_TRUNC)
         return 1;
         return &sortsub;
         return &sort1;
@@ -475,9 +491,9 @@ $VERSION = '0.91';
         ksf => $1 || 0,                     # start field
         ksc => $2 || 0,                     # start field char start
         kft => $6 || '',                    # end field type
-        kff => (defined($4) ? $4 : undef),  # end field
-        kfc => (defined($5) ? $5 : undef),  # end field char end
-        if (exists($args[0]->{'pos'})) {
+        kff => (defined $4 ? $4 : undef),  # end field
+        kfc => $5 || 0,                     # end field char end
+        if (exists $args[0]{'pos'}) {
         if (defined $rec) {     # bring up next record for this filehandle
         if (@recs) {
         if ($topts->{kst} =~ /[bdfi]/) {
@@ -492,7 +508,7 @@ $VERSION = '0.91';
         foreach (qw(b d f i n r)) {
         foreach (qw(b d f i n r)) {
         for my $m (keys %maps) {
-        _sort_file({I=>$args[0], o=>$args[1]});
+        _sort_file({I => $args[0], o => $args[1]});
         _sort_file(@args);
         _debug("No keydef set\n") if $topts->{D};
         _debug("$sortsub\n$maps{map1}\n$maps{map2}\n") if $topts->{D};
@@ -529,7 +545,7 @@ $VERSION = '0.91';
         # defaults for main sort sub components
         # add finished expression to array
             } elsif ($opts->{kst} =~ /i/) {
-            } elsif (!ref($args[0]->{'k'})) {
+            } elsif (!ref $args[0]{'k'}) {
             } else {
             } else {
             } else {
@@ -551,9 +567,9 @@ $VERSION = '0.91';
             while (defined(my $rec = <F>)) {
             sysopen(F, $opts->{I}[0], O_RDONLY)
             sysopen($sym, $filein, O_RDONLY)
-            push(@fh, $sym);
             push @sortsub, sprintf "%s->[1] %s %s->[1]",
             push @sortsub, sprintf "%s->[$n] %s %s->[$n]",
+            push @fh, $sym;
             print $fh{$first};
             print $fh{$first}, @left;
             print $fh{$first} if
@@ -564,7 +580,7 @@ $VERSION = '0.91';
             my @left = $first eq 'X' ? @$recs : <$curr>;
             my @argv;
             my $sym = gensym();
-            my $pos = $args[0]->{'pos'};
+            my $pos = $args[0]{'pos'};
             my $n = @sortsub + 2;
             my $k = $maps{$m};
             my $curr = $oth{$first};
@@ -582,8 +598,8 @@ $VERSION = '0.91';
             if ($last) {
             if ($k ne 'K') {
             if ($filein eq '-') {
-            if (!ref($pos)) {
-            if (!exists($args[0]->{'k'})) {
+            if (!ref $pos) {
+            if (!exists $args[0]{'k'}) {
             for (@$pos) {
             die "Can't create sort sub: $@" if $@;
             die "Can't create sort sub: $@" if $@;
@@ -594,8 +610,8 @@ $VERSION = '0.91';
             delete $fh{$first};
             defined $topts->{t} ? quotemeta($topts->{t}) :
             defined $topts->{X} ? $topts->{X} :
-            close(F);
-            _debug("\Sorting leftover records ...\n") if $opts->{D};
+            close F;
+            _debug("\nSorting leftover records ...\n") if $opts->{D};
             _debug("Sorting file $filein ...\n") if $opts->{D};
             _check_last(\@recs);
             *sortsub = eval $sortsub;
@@ -650,7 +666,7 @@ $VERSION = '0.91';
                 return 0 unless _are_uniq($opts->{K}, $last, $rec);
                 return 0 if $foo[0] ne $last || $foo[1] ne $rec;
                 require POSIX;
-                push(@recs, $rec);
+                push @recs, $rec;
                 push @mapsub, "  (\n" .
                 push @mapsub, "  " . $fil[0] . ",\n  ";
                 push @fil, "\$tmp =~ s/[^\\w\\s]+//g", '"$tmp"';
@@ -684,8 +700,8 @@ $VERSION = '0.91';
                 $fil[0] = "uc($fil[0])";
                 $fil[0] = "join '', grep {POSIX::isprint \$_} " .
                 $count++;  # keep track of number of records
-                $args[0]->{'k'} = [];
-                $args[0]->{'k'} = [$args[0]->{'k'}];
+                $args[0]{'k'} = [];
+                $args[0]{'k'} = [$args[0]{'k'}];
                 $aa, $cmp, $bb;
                 # try again, shall we?
                 # skip leading spaces
@@ -699,15 +715,15 @@ $VERSION = '0.91';
                     }
                     }
                     }
-                    push(@fh, _write_temp(\@recs, $opts));
-                    push @{$args[0]->{'k'}}, $n;
+                    push @{$args[0]{'k'}}, $n;
+                    push @fh, _write_temp(\@recs, $opts);
                     or die "Can't open `$filein' for reading: $!";
                     or die "Can't open `$filein' for reading: $!";
                     map &map2, keys %fh);
                     local $^W;
                     local $^W;
                     join(",\n", map {s/^/      /mg; $_} @fil),
-                    if (defined($4)) {
+                    if (defined $4) {
                     if (@fh >= $opts->{F}) {
                     if ($opts->{ksc} == 0 &&
                     if ($opts->{kfc} == 0 && $opts->{ksc} == 0 &&
@@ -758,6 +774,14 @@ $VERSION = '0.91';
             
         
     
+
+
+
+
+
+
+
+
 
 
 

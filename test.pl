@@ -8,6 +8,12 @@ use diagnostics;
 # Change 1..1 below to 1..last_test_to_print .
 # (It may become useful if the test is moved to ./t subdirectory.)
 
+BEGIN { # turn off locales for test
+    use POSIX 'locale_h';
+    $ENV{LC_ALL} = $ENV{LANG} = '';
+    setlocale(LC_CTYPE, "");
+    setlocale(LC_COLLATE, "");
+}
 BEGIN { $| = 1; print "1..8\n"; }
 END {print "not ok 1\n" unless $loaded;}
 use lib 'lib', 'blib';
@@ -26,6 +32,7 @@ my $i = 1;
 
 
 if (1) {
+	local(*F0, *F1, *F2, *F3);
 	my $fail1 = 0;
 	my $fail2 = 0;
 	my @files = qw(
@@ -34,22 +41,22 @@ if (1) {
 		Sort.pm_rsorted
 		Sort.pm_rsorted.txt
   	);
-	sort_file({ I => 'Sort.pm_unsorted.txt', o => $files[0], D => $D });
-	sort_file({ I => 'Sort.pm_unsorted.txt', o => $files[2], r => 1, D => $D });
+	sort_file({ I => 'Sort.pm', o => $files[0], D => $D });
+	sort_file({ I => 'Sort.pm', o => $files[2], r => 1, D => $D });
 
 	open F0, $files[0] or $fail1++;
 	open F1, $files[1] or $fail1++;
 	open F2, $files[2] or $fail2++;
 	open F3, $files[3] or $fail2++;
 
-	while(<F1>) {
+	while (<F1>) {
 		chomp;
 		defined(my $l = <F0>) or ($fail1++, last);
 		chomp $l;
 		$fail1++ if $l ne $_;
 	}
 
-	while(<F3>) {
+	while (<F3>) {
 		chomp;
 		defined(my $l = <F2>) or ($fail2++, last);
 		chomp $l;
@@ -70,26 +77,27 @@ if (1) {
 	open F1, $files[1] or $fail1++;
 	open F3, $files[3] or $fail1++;
 
-    my $temp = join '', sort <F1>, <F3>;
+	my $temp = join '', sort <F1>, <F3>;
 
-    close F1;
-    close F3;
+	close F1;
+	close F3;
 
-    sort_file({ I => [@files[1, 3]], o => $files[0], D => $D });
+	sort_file({ I => [@files[1, 3]], o => $files[0], D => $D });
 	open F0, $files[0] or $fail1++;
 
 	{
-        local $/;
-        $fail1 ||= <F0> ne $temp;
-	    printf "%s %d\n", ($fail1 ? 'not ok' : 'ok'), ++$i;
+		local $/;
+		$fail1 ||= <F0> ne $temp;
+		printf "%s %d\n", ($fail1 ? 'not ok' : 'ok'), ++$i;
 	}
 
-    close F0;
+	close F0;
 
-    unlink $files[0] unless $fail1;
+	unlink $files[0] unless $fail1;
 }
 
 if (1) {
+	local(*F0, *F1, *F2);
 	my $fail1 = 0;
 	my $fail2 = 0;
 	my @lines;
@@ -125,8 +133,8 @@ if (1) {
 		$fail2++ if $l != $_;
 	}
 
-    close F1;
-    close F2;
+	close F1;
+	close F2;
 
 	printf "%s %d\n", ($fail1 ? 'not ok' : 'ok'), ++$i;
 	printf "%s %d\n", ($fail2 ? 'not ok' : 'ok'), ++$i;
@@ -173,8 +181,8 @@ if (1) {
 		$fail2++ if $l ne $_;
 	}
 
-    close F1;
-    close F2;
+	close F1;
+	close F2;
 
 	printf "%s %d\n", ($fail1 ? 'not ok' : 'ok'), ++$i;
 	printf "%s %d\n", ($fail2 ? 'not ok' : 'ok'), ++$i;

@@ -13,7 +13,7 @@ open OUT,">$file" or die "Can't create $file: $!";
 print "Extracting $file (with variable substitutions)\n";
 
 print OUT <<"!GROK!THIS!";
-$Config{startperl} -sw-
+$Config{startperl} -w-
 !GROK!THIS!
 
 # In the following, perl variables are not expanded during extraction.
@@ -23,13 +23,13 @@ print OUT <<'!NO!SUBS!';
 # see POD below for more information
 
 use Getopt::Long qw(GetOptions);
-use Fcntl qw(O_RDONLY O_WRONLY O_EXCL O_CREAT);
+use Fcntl qw(O_RDONLY O_WRONLY O_CREAT O_TRUNC);
 use Symbol qw(gensym);
 use strict;
 use locale;
 use vars qw($VERSION *sortsub *sort1 *sort2 *map1 *map2 %fh);
 
-$VERSION = '0.67';
+$VERSION = '1.00';
 Getopt::Long::config('bundling');  # -cmu == -c -m -u
 
 {
@@ -88,7 +88,7 @@ sub _sort_file {
 
     # "K" == "no k", for later
     $opts->{K} = $opts->{k} ? 0 : 1;
-    $opts->{k} = $opts->{k} ? [$opts->{k}] : [] if !ref($opts->{k});
+    $opts->{k} = $opts->{k} ? [$opts->{k}] : [] if !ref $opts->{k};
 
     # set output and other defaults
     $opts->{o}   = !$opts->{o} ? '' : $opts->{o};
@@ -150,7 +150,7 @@ sub _sort_file {
             sysopen($sym, $filein, O_RDONLY)
                 or die "Can't open `$filein' for reading: $!";
 
-            push(@fh, $sym);
+            push @fh, $sym;
         }
         
     # ooo, get ready, get ready
@@ -172,7 +172,7 @@ sub _sort_file {
             }
 
             while (defined(my $rec = <F>)) {
-                push(@recs, $rec);
+                push @recs, $rec;
                 $count++;  # keep track of number of records
 
                 if ($count >= $opts->{'y'}) {    # don't go over record limit
@@ -181,7 +181,7 @@ sub _sort_file {
                         if $opts->{D};
 
                     # save to temp file, add new fh to array
-                    push(@fh, _write_temp(\@recs, $opts));
+                    push @fh, _write_temp(\@recs, $opts);
 
                     # reset record count and record array
                     ($count, @recs) = (0);
@@ -197,12 +197,12 @@ sub _sort_file {
                 }
             }
 
-            close(F);
+            close F;
         }
 
         # records leftover, didn't reach record limit
         if (@recs) {
-            _debug("\Sorting leftover records ...\n") if $opts->{D};
+            _debug("\nSorting leftover records ...\n") if $opts->{D};
             _check_last(\@recs);
             if ($opts->{K}) {
                 local $^W;
@@ -216,7 +216,7 @@ sub _sort_file {
 
     # do the merge thang, uh huh, do the merge thang
     my $close = _merge_files($opts, \@fh, \@recs, $opts->{o});
-    close($close) unless $$close eq 'main::STDOUT'; # don't close STDOUT
+    close $close unless fileno($close) == fileno('STDOUT'); # don't close STDOUT
 
     _debug("\nDone!\n\n") if $opts->{D};
     return 1;   # yay
@@ -249,14 +249,14 @@ sub _merge_files {
 
     # if output file is a path, not a reference to a file, open
     # file and get a reference to it
-    } elsif (! ref($file)) {
+    } elsif (!ref $file) {
         my $tfh = gensym();
-        sysopen($tfh, $file, O_WRONLY|O_CREAT)
+        sysopen($tfh, $file, O_WRONLY|O_CREAT|O_TRUNC)
             or die "Can't open `$file' for writing: $!";
         $file = $tfh;
     }
 
-    my $oldfh = select($file);
+    my $oldfh = select $file;
     $| = 0; # just in case, use the buffer, you knob
 
     while (keys %fh) {
@@ -305,8 +305,8 @@ sub _merge_files {
         }
     }
 
-    seek($file, 0, 0);  # might need to read back from it
-    select($oldfh);
+    seek $file, 0, 0;  # might need to read back from it
+    select $oldfh;
     return $file;
 }
 
@@ -331,7 +331,7 @@ sub _write_temp {
         print $temp map {$_->[0]} sort sortsub map &map1, @{$recs};
     }
 
-    seek($temp, 0, 0);  # might need to read back from it
+    seek $temp, 0, 0;  # might need to read back from it
     return $temp;
 }
 
@@ -348,8 +348,8 @@ sub _parse_keydef {
         ksf => $1 || 0,                     # start field
         ksc => $2 || 0,                     # start field char start
         kst => $3 || '',                    # start field type
-        kff => (defined($4) ? $4 : undef),  # end field
-        kfc => (defined($5) ? $5 : undef),  # end field char end
+        kff => (defined $4 ? $4 : undef),  # end field
+        kfc => $5 || 0,                     # end field char end
         kft => $6 || '',                    # end field type
     );
 
@@ -863,17 +863,21 @@ user ID.
 
 =head1 ENVIRONMENT
 
+Note that if you change the locale settings after the program has started
+up, you must call setlocale() for the new settings to take effect.  For
+example:
+
+    # get constants
+    use POSIX 'locale_h';
+
+    # e.g., blank out locale
+    $ENV{LC_ALL} = $ENV{LANG} = '';
+
+    # use new ENV settings
+    setlocale(LC_CTYPE, '');
+    setlocale(LC_COLLATE, '');
+
 =over 4
-
-=item MAX_SORT_RECORDS
-
-Default is 200,000.  Maximum number of records to use before writing
-to a temp file.  Overriden by B<y> option.
-
-=item MAX_SORT_FILES
-
-Maximum number of open temp files to use before merging open temp
-files.  Overriden by B<F> option.
 
 =item LC_COLLATE
 
@@ -886,6 +890,16 @@ text data as characters (for example, single- versus multi-byte
 characters in arguments and input files) and the behaviour of
 character classification for the B<b>, B<d>, B<f>, B<i> and B<n>
 options.
+
+=item MAX_SORT_RECORDS
+
+Default is 200,000.  Maximum number of records to use before writing
+to a temp file.  Overriden by B<y> option.
+
+=item MAX_SORT_FILES
+
+Maximum number of open temp files to use before merging open temp
+files.  Overriden by B<F> option.
 
 =back
 
@@ -900,12 +914,28 @@ options.
 
 =item Do bytes instead of lines
 
+=item Better test suite
+
+=item Switch for turning off locale ... ?
+
 =back
 
 
 =head1 HISTORY
 
 =over 4
+
+=item v1.00, Tuesday, November 13, 2001
+
+Long overdue release.
+
+Add O_TRUNC to output open (D'oh!).
+
+Played with somem of the -k options (Marco A. Romero).
+
+Fix filehandle close test of STDOUT (Gael Marziou).
+
+Some cleanup.
 
 =item v0.68, Saturday, February 12, 2000
 
@@ -976,34 +1006,37 @@ Mike Blazer E<lt>blazer@mail.nevalink.ruE<gt>,
 Vicki Brown E<lt>vlb@cfcl.comE<gt>,
 Tom Christiansen E<lt>tchrist@perl.comE<gt>,
 Albert Dvornik E<lt>bert@mit.eduE<gt>,
+Paul Eckert E<lt>peckert@epicrealm.comE<gt>,
 Gene Hsu E<lt>gene@moreinfo.comE<gt>,
 Andrew M. Langmead E<lt>aml@world.std.comE<gt>,
+Gael Marziou E<lt>gael_marziou@hp.comE<gt>,
 Brian L. Matthews E<lt>blm@halcyon.comE<gt>,
 Rich Morin E<lt>rdm@cfcl.comE<gt>,
 Matthias Neeracher E<lt>neeri@iis.ee.ethz.chE<gt>,
 Miko O'Sullivan E<lt>miko@idocs.comE<gt>,
 Tom Phoneix E<lt>rootbeer@teleport.comE<gt>,
-Gurusamy Sarathy E<lt>gsar@activestate.comE<gt>.
+Marco A. Romero E<lt>mromero@iglou.comE<gt>,
+Gurusamy Sarathy E<lt>gsar@activestate.comE<gt>,
+Hubert Toullec E<lt>Hubert.Toullec@wanadoo.frE<gt>.
 
 
 =head1 AUTHOR
 
 Chris Nandor E<lt>pudge@pobox.comE<gt>, http://pudge.net/
 
-Copyright (c) 2000 Chris Nandor.
-
-This program is free and open software. You may use, modify,
-distribute, and sell this program (and any modified variants) in any
-way you wish, provided you do not restrict others from doing the same.
+Copyright (c) 1997-2001 Chris Nandor.  All rights reserved.  This program
+is free software; you can redistribute it and/or modify it under the terms
+of the Artistic License, distributed with Perl.
 
 
 =head1 VERSION
 
-v0.68, Saturday, February 12, 2000
+v1.00, Tuesday, November 13, 2001
+
 
 =head1 SEE ALSO
 
-PPT project, <URL:http://language.perl.com/ppt/>,
+PPT project, <URL:http://sf.net/projects/ppt/>,
 sort(1), File::Sort, locale.
 
 =cut
