@@ -1,0 +1,314 @@
+}
+}
+}
+}
+}
+will try to be ascertained if it none is given, finally reverting to the
+use vars qw(@ISA @EXPORT_OK @EXPORT $VERSION *sort1 *sort2 %fh);
+use strict;
+use File::Basename;
+use Exporter;
+use Carp;
+to how many files can be opened at once.  A default value is given in the 
+time, like sort(1); this might change).  We hope to gain some more 
+the fact that it exists.
+suite; fixed warning for redefined subs (sort1 and sort2).
+sub sortFile {
+sub _writeTemp {
+sub _tempDir {
+sub _mergeFiles {
+sub _getTemp {
+software; you can redistribute it and/or modify it under the same terms as
+perl(1), sort(1).
+package File::Sort;
+nor does everyone have access to sort(1).
+no strict 'refs';
+module.
+many parts out into separate functions.
+lines to deal with at a time (as opposed to how much memory to deal with at a
+large files on Unix than you will on Mac OS.  C'est la vie.
+intelligence for sort in the future.
+if it is available.
+http://pudge.net/
+directory of the outfile if none is given.  FILE_LIMIT is the system's limit
+boxes.  This was developed primarily because some perls (specifically, 
+and on allowing more ordering options besides just regular, numeric and reverse.
+already sorted.  UNIQUE_ONLY, if true, only outputs unique lines, removing
+all others.  TEMP_DIR gives a location for temporary directory.  A default
+a native linebreak character will be added to it.
+__END__
+WARNING: This is MUCH SLOWER than using sort(1) that comes with most Unix 
+WARNING Part Deux: This module is subject to change in every way, including
+Version 0.11 (03 January 1998)
+Unix systems can get away with something like that because of VM, while Mac 
+This will sort INFILE to OUTFILE.  The OUTFILE can be the same as the
+This time, FILEIN can be a filename or an reference to an array of filenames. 
+There are two primary syntaxes:
+That all having been noted, there are plans to have this module use sort(1)
+Some cleanup; made it not subject to system file limitations; separated 
+Perl itself.
+OS systems cannot.  So inevitably you will get much better performance with 
+Note that if INFILE does not have a linebreak terminating the last line,
+None!  :)  I plan on making CHUNK and FILE_LIMIT more intelligent somehow, 
+More cleanup; fixed special case of no linebreak on last line; wrote test 
+MkLinux DR2.1, but results were similar on an Ultra SPARC 1 running Solaris 
+MacPerl) do not have access to potentially infinite amounts of memory 
+If MERGE_ONLY is true, then C<File::Sort> will assume the files on input are
+INFILE, but it is required.  VERBOSE is off by default.  CHUNK is how many
+Here are some benchmarks that might be of interest (Power Mac 7100/66 with
+First release.
+File::Sort - Sort a file or merge sort multiple files.
+Exports C<sortFile()> on request.
+Currently, C<sortFile()> returns nothing.  Any ideas on this are welcome.
+Copyright (c) 1998 Chris Nandor.  All rights reserved.  This program is free
+Chris Nandor F<E<lt>pudge@pobox.comE<gt>>
+CHUNK value of 200,000 lines, which was more than the whole file contained; 
+Also, I will have the module use sort(1) if it is available.
+Added unique and merge-only options.
+Added reverse and numeric sorting options.
+@ISA = qw(Exporter);
+@EXPORT_OK = qw(sortFile);
+@EXPORT = ();
+=over 4
+=item v0.11 (04 January 1998)
+=item v0.10 (03 January 1998)
+=item v0.03 (23 December 1997)
+=item v0.02 (19 December 1997)
+=item v0.01 (18 December 1997)
+=head1 VERSION
+=head1 SYNOPSIS
+=head1 SEE ALSO
+=head1 RETURN VALUE
+=head1 NAME
+=head1 HISTORY
+=head1 EXPORT
+=head1 DESCRIPTION
+=head1 BUGS
+=head1 AUTHOR
+=cut
+=back
+2.5.1).  The file was a mail file around 6MB.  Note that once was with a 
+(thus they cannot necessarily slurp in a text file of several megabytes), 
+$VERSION = sprintf("%d.%02d", q$Revision: 0.11 $ =~ /(\d+)\.(\d+)/);
+#!perl -w
+  });
+  });
+  })
+  use File::Sort qw(sortFile);
+  use File::Sort qw(sortFile);
+  use Benchmark;
+  timethese(10,{
+  sortFile({
+  sortFile({
+  sortFile(INFILE, OUTFILE [, VERBOSE, CHUNK]);
+  sortFile('file1','file1_new',1,1000);
+  Benchmark: timing 10 iterations of 1, 2, 3...
+    Y=>CHUNK, TF=>FILE_LIMIT, 
+    V=>1,Y=>1000,TF=>50,M=>1,U=>1,R=>1,N=>1,T=>'/tmp'
+    R=>REVERSE, N=>NUMERIC, T=>TEMP_DIR
+    O=>'filex_new',
+    M=>MERGE_ONLY, U=>UNIQUE_ONLY, 
+    I=>[qw(file1_new file2_new)],
+    I=>INFILE, O=>OUTFILE, V=>VERBOSE, 
+    4=>q+sortFile({I=>$ARGV[0],O=>"$ARGV[0].3"})+,
+    4: 13239 secs (12981.68 usr 79.65 sys = 13061.33 cpu)
+    3=>q+sortFile({I=>$ARGV[0],O=>"$ARGV[0].2",Y=>200000})+,
+    3: 781 secs (670.78 usr 48.45 sys = 719.23 cpu)
+    2=>q+open(F,$ARGV[0]);open(F1,">$ARGV[0].4");@f=<F>;print F1 sort @f+
+    2: 262 secs (215.18 usr 21.60 sys = 236.78 cpu)
+    1=>q+`sort -o $ARGV[0].1 $ARGV[0]`+,
+    1: 161 secs ( 0.01 usr  0.03 sys + 105.47 cusr 34.37 csys = 139.88 cpu)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	} elsif (sort1() eq 'r') {
+	} elsif ($^O =~ /^MS(DOS|Win32)/i) {
+	} elsif ($^O !~ /^VMS/i) {
+	} elsif (!ref($_[0])) {
+	} else {
+	} else {
+	} else {
+	}
+	}
+	}
+	}
+	}
+	}
+	}
+	}
+	{
+	while (keys %fh) {
+	while (-e $$opts{T} . $temp || ($^O eq 'MacOS' && length($temp) > 31)) {
+	seek($temp,0,0);
+	seek($file,0,0);
+	return $temp;
+	return $temp;
+	return $file;
+	return $$opts{T};
+	print "\nDone!\n\n" if $$opts{V};
+	print "\nDeleting temp files ...\n" if ($$opts{V} && !$$opts{M});
+	print "\nCreating sorted $file ...\n" if $$opts{V};
+	print "  $temp\n" if $$opts{V};
+	open($temp, "+>$temp") || croak($!);
+	open($file, "+>$file") || croak($!);
+	my($uniq, $first, $line);
+	my($temp) = _getTemp($basename, $count2, $opts);
+	my($temp) = $basename . '_' . time . '_' . $count2;
+	my($opts, $fh, $file) = @_;
+	my($opts, $basedir) = @_;
+	my($basename, $count2, $opts) = @_;
+	my($basename, $count2, $lines, $opts) = @_;
+	my(
+	if (sort1() eq 'a') {
+	if ($^O eq 'MacOS') {
+	if (!$_[0] && (!ref($_[0]) || !$_[1])) {
+	if (!$$opts{M}) {
+	foreach (@$fh) {
+	close(_mergeFiles($opts, \@fh, $$opts{O}));
+	);
+	);
+	);
+	($a, $b, $count1, $count2) = (1, 1, 0, 0);
+	%sort2 = (
+	%sort1 = (
+	%fh = map {($_ => scalar <$_>)} @$fh;
+	$temp = $$opts{T} . $temp;
+	$$opts{Y}	||= 3000;
+	$$opts{T} ||= $^O eq 'MacOS' ? 'h&hTR%f%~)' : '/tmp'; #make sure it's bad :)
+	$$opts{T} = -d $$opts{T} ? $$opts{T} :
+	$$opts{TF}	||= 50;
+	$$opts{R}	= $$opts{R} ? 1 : 0;
+	$$opts{N}	= $$opts{N} ? 1 : 0;
+	$$lines[-1] .= $/ if ($$lines[-1] !~ m|$/$|);
+		} else {
+		}
+		}
+		}
+		}
+		while ($^O eq 'MacOS' && length($temp) > 31) {
+		unlink($_) unless ($$opts{M});
+		print $temp sort sort1 @{$lines};
+		print $temp sort @{$lines};
+		print $temp reverse sort @{$lines};
+		print "  $_\n" if ($$opts{V});
+		local($^W) = 0;
+		if ($$opts{U} && $uniq && $uniq ne $fh{$first}) {
+		foreach $filein (@{$$opts{I}}) {
+		foreach $filein (@{$$opts{I}}) {
+		defined($line=<$first>) ? $fh{$first} = $line : delete $fh{$first};
+		croak 'Usage: sortFile({I=>FILEIN, O=>FILEOUT, %otheroptions})'
+		croak 'Usage: sortFile($filein, $fileout [, $verbose, $chunk])';
+		close($_);
+		*sort2 = $sort2{($$opts{R} . $$opts{N})};
+		*sort1 = $sort1{($$opts{R} . $$opts{N})};
+		($first) = (sort sort2 keys %fh);
+		($filein, $$opts{O}, $$opts{V}, $$opts{Y}) = @_;
+		'11'=> sub {$fh{$b} <=> $fh{$a}},
+		'11'=> sub {$b <=> $a},
+		'10'=> sub {'r'},
+		'10'=> sub {$fh{$b} cmp $fh{$a}},
+		'01'=> sub {$fh{$a} <=> $fh{$b}},
+		'01'=> sub {$a <=> $b},
+		'00'=> sub {'a'},
+		'00'=> sub {$fh{$a} cmp $fh{$b}},
+		$temp .= $count2;
+		$opts = \%{$_[0]};
+		$filein, $uniq, $basedir, $basename, %sort1, %sort2,
+		$count1, $count2, @lines, $lines, $line, @fh, $first, $opts,
+		$ENV{TMPDIR} || $ENV{TMP} || $ENV{TEMP} || $basedir;
+		$$opts{T} .= '\\' if ($$opts{T} !~ /\\$/);
+		$$opts{T} .= ':' if ($$opts{T} !~ /:$/);
+		$$opts{T} .= '/' if ($$opts{T} !~ /\/$/);
+		$$opts{I} = [(ref($$opts{I}) ? @{$$opts{I}} : $$opts{I})];
+		$$opts{I} = [$filein];
+			}
+			}
+			while (defined($line=<F>)) {
+			push(@fh, $filein);
+			print $file $fh{$first};
+			print $file $fh{$first};
+			print "Sorting file $filein ...\n" if $$opts{V};
+			print "Creating temp files ...\n" if $$opts{V};
+			open(F, "<$filein") || croak($!);
+			open($filein, "<$filein") || croak($!);
+			if (@lines) {
+			if (!$$opts{O} || !@{$$opts{I}});
+			close(F);
+			chop($temp);
+			chop($temp);
+			($basename, $basedir) = fileparse($filein);
+			$uniq = $fh{$first};
+			$$opts{T} = _tempDir($opts, $basedir) if ($filein eq ${$$opts{I}}[0]);
+				}
+				push(@lines, $line);
+				push(@fh, _writeTemp($basename, $count2, \@lines, $opts));
+				if ($count1 >= $$opts{Y}) {
+				($count1, $count2, @lines) = (0, ++$count2);
+				$count1++;
+					}
+					push(@fh, _writeTemp($basename, $count2, \@lines, $opts));
+					if ($count2 >= $$opts{TF}) {
+					($count1, $count2, @lines) = (0, ++$count2);
+						print "\nCreating temp files ...\n" if $$opts{V};
+						@fh = (_mergeFiles($opts, \@fh, _getTemp($basename, 'M', $opts)));
+						$count2 = 0;
