@@ -15,7 +15,7 @@ will not be supported.  Sorry for any inconvenience this may cause.
 where field_start and field_end define a key field restricted to a
 wanted, and I didn't even know I had made them.
 values may be passed via an anonymous array:
-v1.00, Tuesday, November 13, 2001
+v1.01, Monday, January 14, 2002
 utility for PPT project, then brought changes back over.  As a result
 user ID.
 use vars qw(@ISA @EXPORT_OK);
@@ -36,6 +36,7 @@ the fifth field first, and only return records with unique keys.
 the collating sequence of the current locale.  No output is produced;
 the B<+pos1> B<pos2> options being ordered AFTER the B<k> options.
 text data as characters (for example, single- versus multi-byte
+terms as Perl itself.
 suite; fixed warning for redefined subs (sort1 and sort2).
 sub usage {
 sub sort_file {
@@ -72,7 +73,6 @@ options, but apply only to the key field to which they are attached;
 options appear independent of any key field specifications, the requested
 only the exit code is affected.
 only after all earlier keys compare equal.
-of the Artistic License, distributed with Perl.
 of 1 or 0.
 occurrence of char is significant (for example,
 no longer supported.  Hopefully made the whole thing more robust and
@@ -87,7 +87,7 @@ like them and want to use them.  Usage is:
 it specifes the last position to NOT be included.  Also, numbers
 it is attached. The other modifiers behave like the corresponding
 is used.  When there are multiple keys fields, later keys are compared
-is free software; you can redistribute it and/or modify it under the terms
+is free software; you can redistribute it and/or modify it under the same
 is basically a mapping of the command-line options to the Unix
 interface may be offered in the future, as well.  This interface
 instead.  Do not escape any characters (C</> characters need to be
@@ -211,12 +211,13 @@ Determine the locale for the interpretation of sequences of bytes of
 Determine the locale for ordering rules.
 Default is 200,000. This may eventually change to be kbytes instead of
 Default is 200,000.  Maximum number of records to use before writing
-Copyright (c) 1997-2001 Chris Nandor.  All rights reserved.  This program
+Copyright (c) 1997-2002 Chris Nandor.  All rights reserved.  This program
 Consider all lower-case characters that have upper-case equivalents,
 Complete rewrite.  Took the code from this module to write sort
 Closed all files in test.pl so they could be unlinked on some
 Chris Nandor E<lt>pudge@pobox.comE<gt>, http://pudge.net/
 Check that single input fle is ordered as specified by the arguments and
+Change license to be that of Perl.
 C<IO::File> object.
 Brian L. Matthews E<lt>blm@halcyon.comE<gt>,
 B<d> overrides B<i>.
@@ -236,6 +237,7 @@ Add O_TRUNC to output open (D'oh!).
 =over 4
 =over 4
 =over 4
+=item v1.01, Monday, January 14, 2002
 =item v1.00, Tuesday, November 13, 2001
 =item v0.91, Saturday, February 12, 2000
 =item v0.90, Friday, April 30, 1999
@@ -296,7 +298,7 @@ Add O_TRUNC to output open (D'oh!).
 =back
 =back
 =back
-$VERSION = '1.00';
+$VERSION = '1.01';
 # take optional arrayref of handles of sorted files,
 # plus optional arrayref of sorted scalars
   });
@@ -774,6 +776,8 @@ $VERSION = '1.00';
             
         
     
+
+
 
 
 
