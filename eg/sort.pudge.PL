@@ -99,7 +99,6 @@ sub _sort_file {
     # see big ol' mess below
     _make_sort_sub($opts);
 
-
     # only check to see if file is sorted
     if ($opts->{c}) {
         local *F;
@@ -161,7 +160,6 @@ sub _sort_file {
         foreach my $filein (@{$opts->{I}}) {
             local *F;
             my $count = 0;
-            @recs = ();
 
             _debug("Sorting file $filein ...\n") if $opts->{D};
 
@@ -199,19 +197,20 @@ sub _sort_file {
                 }
             }
 
-            # records leftover, didn't reach record limit
-            if (@recs) {
-                _debug("\Sorting leftover records ...\n") if $opts->{D};
-                _check_last(\@recs);
-                if ($opts->{K}) {
-                    local $^W;
-                    @recs = sort sort1 @recs;
-                } else {
-                    local $^W;
-                    @recs = map {$_->[0]} sort sortsub map &map1, @recs;
-                }
-            }
             close(F);
+        }
+
+        # records leftover, didn't reach record limit
+        if (@recs) {
+            _debug("\Sorting leftover records ...\n") if $opts->{D};
+            _check_last(\@recs);
+            if ($opts->{K}) {
+                local $^W;
+                @recs = sort sort1 @recs;
+            } else {
+                local $^W;
+                @recs = map {$_->[0]} sort sortsub map &map1, @recs;
+            }
         }
     }
 
@@ -252,7 +251,7 @@ sub _merge_files {
     # file and get a reference to it
     } elsif (! ref($file)) {
         my $tfh = gensym();
-        sysopen($tfh, $file, O_WRONLY|O_CREAT|O_EXCL)
+        sysopen($tfh, $file, O_WRONLY|O_CREAT)
             or die "Can't open `$file' for writing: $!";
         $file = $tfh;
     }
@@ -650,6 +649,11 @@ The following options are available:
 
 =over 4
 
+=item C<I> I<INPUT>
+
+Pass in the input file(s).  This can be either a single string with the
+filename, or an array reference containing multiple filename strings.
+
 =item C<c>
 
 Check that single input fle is ordered as specified by the arguments and
@@ -903,6 +907,18 @@ options.
 
 =over 4
 
+=item v0.68, Saturday, February 12, 2000
+
+Closed all files in test.pl so they could be unlinked on some
+platforms.  (Hubert Toullec)
+
+Documented C<I> option.  (Hubert Toullec)
+
+Removed O_EXCL flag from C<sort_file>.
+
+Fixed bug in sorting multiple files.  (Paul Eckert)
+
+
 =item v0.67 Friday, April 30, 1999
 
 Merged sources back into File::Sort module.
@@ -974,7 +990,7 @@ Gurusamy Sarathy E<lt>gsar@activestate.comE<gt>.
 
 Chris Nandor E<lt>pudge@pobox.comE<gt>, http://pudge.net/
 
-Copyright (c) 1999 Chris Nandor.
+Copyright (c) 2000 Chris Nandor.
 
 This program is free and open software. You may use, modify,
 distribute, and sell this program (and any modified variants) in any
@@ -983,7 +999,7 @@ way you wish, provided you do not restrict others from doing the same.
 
 =head1 VERSION
 
-v0.67 Friday, April 30, 1999
+v0.68, Saturday, February 12, 2000
 
 =head1 SEE ALSO
 

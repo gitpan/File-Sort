@@ -283,6 +283,14 @@
 
 
 
+
+
+
+
+
+
+
+
     
         
             
@@ -329,16 +337,12 @@
                     ($opts->{kff} ? "\$tmp[$opts->{kff}]" : ''));
                     @foo = map {$_->[0]} sort sortsub
                     @foo = sort sort1 ($rec, $last);
-                    @recs = map {$_->[0]} sort sortsub map &map1, @recs;
-                    @recs = sort sort1 @recs;
                     _debug("$count records reached in `$filein'\n")
                     if ($opts->{kfc} == 0 && $opts->{ksc} == 0 &&
                     if ($opts->{ksc} == 0 &&
                     if (@fh >= $opts->{F}) {
                     if (defined($4)) {
                     join(",\n", map {s/^/      /mg; $_} @fil),
-                    local $^W;
-                    local $^W;
                     local $^W;
                     local $^W;
                     map &map2, keys %fh);
@@ -372,15 +376,16 @@
                 ($first) = (map {$_->[0]} sort sortsub
                 ($first) = (sort sort2 keys %fh);
                 @fil = $opts->{kst} =~ /b/ ?
-                _check_last(\@recs);
-                _debug("\Sorting leftover records ...\n") if $opts->{D};
+                @recs = map {$_->[0]} sort sortsub map &map1, @recs;
+                @recs = sort sort1 @recs;
                 if (   /^\+(\d+)(?:\.(\d+))?([bdfinr]+)?
                 if (! defined $opts->{kff} || $opts->{ksf} == $opts->{kff}) {
                 if ($count >= $opts->{'y'}) {    # don't go over record limit
                 if ($opts->{K}) {
-                if ($opts->{K}) {
                 if ($opts->{kft} =~ /b/) {
                 if ($opts->{kst} =~ /b/) {
+                local $^W;
+                local $^W;
                 local $^W;
                 local $^W;
                 my $n;
@@ -404,8 +409,6 @@
                 }
                 }
                 }
-                }
-                } else {
                 } else {
                 } else {
             # $first is arbitrary number assigned to first fh in sort
@@ -419,7 +422,6 @@
             # just open files and get array of handles
             # only alphanumerics and whitespace, override -i
             # only printable characters
-            # records leftover, didn't reach record limit
             # reverse sense
             # save value of last record
             # skip stuff if special K
@@ -449,8 +451,9 @@
             *sort1  = eval $sort1;
             *sort2  = eval $sort2;
             *sortsub = eval $sortsub;
-            @recs = ();
+            _check_last(\@recs);
             _debug("Sorting file $filein ...\n") if $opts->{D};
+            _debug("\Sorting leftover records ...\n") if $opts->{D};
             close(F);
             defined $topts->{X} ? $topts->{X} :
             defined $topts->{t} ? quotemeta($topts->{t}) :
@@ -468,11 +471,11 @@
             if ($k ne 'K') {
             if ($last) {
             if ($opts->{K}) {
+            if ($opts->{K}) {
             if ($opts->{kst} =~ /d/) {
             if ($opts->{kst} =~ /f/) {
             if ($opts->{u} && $last) {
             if (@fil > 1) {
-            if (@recs) {
             last;
             local $^W;
             local $^W;
@@ -515,6 +518,7 @@
             } else {
             } else {
             } else {
+            } else {
             } elsif (!ref($args[0]->{'k'})) {
             } elsif ($opts->{kst} =~ /i/) {
         # add finished expression to array
@@ -528,6 +532,7 @@
         # if not -u
         # more complex stuff, act like we had -k defined
         # once for each input file
+        # records leftover, didn't reach record limit
         # reverse sense
         # success, yay
         # use @$recs, not filehandles, if key is X
@@ -564,6 +569,7 @@
         if ($opts->{I}[0] eq '-') {
         if ($opts->{u}) {
         if ($topts->{kst} =~ /[bdfi]/) {
+        if (@recs) {
         if (defined $rec) {     # bring up next record for this filehandle
         if (exists($args[0]->{'pos'})) {
         kfc => (defined($5) ? $5 : undef),  # end field char end
@@ -593,12 +599,13 @@
         return &sort1;
         return &sortsub;
         return 1;
-        sysopen($tfh, $file, O_WRONLY|O_CREAT|O_EXCL)
+        sysopen($tfh, $file, O_WRONLY|O_CREAT)
         u => 1, r => 1, k => ['5.3,5.5rn', '2.2,2.2'],
         while (defined(my $rec = <F>)) {
         {
         {
         {
+        }
         }
         }
         }
@@ -754,7 +761,7 @@
   });
 # plus optional arrayref of sorted scalars
 # take optional arrayref of handles of sorted files,
-$VERSION = '0.80';
+$VERSION = '0.91';
 ***DANGER, WILL ROBINSON***
 =back
 =back
@@ -779,6 +786,7 @@ $VERSION = '0.80';
 =item Better debugging and error reporting
 =item C<D>
 =item C<F> I<MAX_SORT_FILES>
+=item C<I> I<INPUT>
 =item C<R> I<STRING>
 =item C<X> I<STRING>
 =item C<b>
@@ -801,7 +809,7 @@ $VERSION = '0.80';
 =item MAX_SORT_FILES
 =item MAX_SORT_RECORDS
 =item Performance hit with -u
-=item Whoops, fix input via STDIN
+=item Tests fail on non-ASCII locales.
 =item v0.01 (18 December 1997)
 =item v0.02 (19 December 1997)
 =item v0.03 (23 December 1997)
@@ -812,14 +820,14 @@ $VERSION = '0.80';
 =item v0.18 (31 January 1998)
 =item v0.20
 =item v0.90, Friday, April 30, 1999
+=item v0.91, Saturday, February 12, 2000
 =over 4
 =over 4
 =over 4
 =over 4
 =over 4
-@EXPORT = ();
-@EXPORT_OK = qw(sort_file);
-@ISA = qw(Exporter);
+@EXPORT_OK = 'sort_file';
+@ISA = 'Exporter';
 Added c option to check sorting.
 Added reverse and numeric sorting options.
 Added unique and merge-only options.
@@ -833,13 +841,15 @@ Brian L. Matthews E<lt>blm@halcyon.comE<gt>,
 C<IO::File> object.
 Check that single input fle is ordered as specified by the arguments and
 Chris Nandor E<lt>pudge@pobox.comE<gt>, http://pudge.net/
+Closed all files in test.pl so they could be unlinked on some
 Complete rewrite.  Took the code from this module to write sort
 Consider all lower-case characters that have upper-case equivalents,
-Copyright (c) 1999 Chris Nandor.  All rights reserved.  This program is
+Copyright (c) 2000 Chris Nandor.  All rights reserved.  This program is
 Default is 200,000.  Maximum number of records to use before writing
 Default is 200,000. This may eventually change to be kbytes instead of
 Determine the locale for ordering rules.
 Determine the locale for the interpretation of sequences of bytes of
+Documented C<I> option.  (Hubert Toullec)
 Does numeric instead of string compare, using whatever perl considers to
 E<lt>charE<gt>E<lt>charE<gt> delimits an empty field).  If B<t> is not
 Except when the B<u> option is specified, lines that otherwise compare
@@ -847,12 +857,14 @@ Exports C<sort_file> on request.
 File::Sort - Sort a file or merge sort multiple files
 First release.
 Fixed bug in C<_merge_files> that tried to C<open> a passed
+Fixed bug in sorting multiple files.  (Paul Eckert)
 Fixed bug with unique option (didn't work :).
 Fixed up docs and did some more tests and benchmarks.
 For the anal sysadmin, check that passwd(4) file is sorted by numeric
 Gene Hsu E<lt>gene@moreinfo.comE<gt>,
-Gurusamy Sarathy E<lt>gsar@activestate.comE<gt>.
+Gurusamy Sarathy E<lt>gsar@activestate.comE<gt>
 Here are some equivalencies:
+Hubert Toullec E<lt>Hubert.Toullec@wanadoo.frE<gt>.
 If any modifier is attached to a field_start or a field_end, no option
 If no B<k> option is specified, a default sort key of the entire line
 If the options are not listed as implemented above, or are not
@@ -875,9 +887,12 @@ More cleanup; fixed special case of no linebreak on last line; wrote test
 Occurrences of the B<k> option are significant in command line order. 
 One year between releases was too long.  I made changes Miko O'Sullivan
 Otherwise, the B<b> option can be attached indepently to each
+Pass in the input file(s).  This can be either a single string with the
+Paul Eckert E<lt>peckert@epicrealm.comE<gt>,
 Print passwd(4) file sorted by numeric user ID.
 Print to STDOUT if no output file supplied.
 Record separator, defaults to newline.
+Removed O_EXCL flag from C<sort_file>.
 Reverse the sense of the comparisons.
 Rich Morin E<lt>rdm@cfcl.comE<gt>,
 Same as B<t>, but I<STRING> is interpreted as a Perl regular expression
@@ -896,7 +911,7 @@ Tests 3 and 4 failed because we hit the open file limit in the
 The following options are available, and are passed in the hash
 The following options override the default ordering rules. When ordering
 The good news is that it should not be too difficult to update your
-The interface has changed in some significant ways.
+The interface has changed in some significant ways from 0.1x.
 The keydef argument is a restricted sort key field definition. The
 The string matched by I<STRING> is not included in the fields
 This includes B<T> and B<z>.
@@ -936,6 +951,7 @@ faster, while supporting more options for sorting, including delimited
 field ordering rules are applied globally to all sort keys. When attached
 field).  See L<perlre> and L<perlfunc/split>.
 field_start or field_end option argument (see below).
+filename, or an array reference containing multiple filename strings.
 files), changed docs.  (Mike Blazer, Gurusamy Sarathy)
 files.  Overriden by B<F> option.
 for the purposes of comparison.
@@ -972,6 +988,7 @@ output in outfile and using second character of second field
 output to STDOUT.
 output.
 package File::Sort;
+platforms.  (Hubert Toullec)
 portion of the line, and type is a modifier from the list of characters
 positions of a restricted sort key.  If the B<b> option is specified
 reference passed to the function in the format:
@@ -1008,15 +1025,15 @@ to a specific key (see B<k>), the specified ordering options override all
 to a temp file.  Overriden by B<y> option.
 to be part of a field (although it can be included in a sort key).  Each
 use Carp;
-use Fcntl qw(O_RDONLY O_WRONLY O_EXCL O_CREAT);
+use Fcntl qw(O_RDONLY O_WRONLY O_CREAT);
 use Symbol qw(gensym);
 use locale;
 use strict;
 use vars qw($VERSION *sortsub *sort1 *sort2 *map1 *map2 %fh);
-use vars qw(@ISA @EXPORT @EXPORT_OK);
+use vars qw(@ISA @EXPORT_OK);
 user ID.
 utility for PPT project, then brought changes back over.  As a result
-v0.80, Friday, April 30, 1999
+v0.91, Saturday, February 12, 2000
 values may be passed via an anonymous array:
 wanted, and I didn't even know I had made them.
 where field_start and field_end define a key field restricted to a

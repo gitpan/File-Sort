@@ -1,15 +1,15 @@
-Friday, April 30, 1999
+Saturday, February 12, 2000
 
-This is File::Sort 0.90, for sorting files similarly to sort(1).  Written
+This is File::Sort 0.91, for sorting files similarly to sort(1).  Written
 primarily for MacPerl users who do not have sort(1) and because of memory
 limitations cannot sort files in memory, but works on all perls, and can
 be useful for portable sorting of large files, or for any system that
-doesn't have a sort(1) and it memory-deprived.
+doesn't have a sort(1) and it memory-deprived (including Windows).
 
 ***WARNING***
 
-Complete rewrite. Took the code from this module to write sort utility
-for PPT project, then brought changes back over. As a result the
+Complete rewrite from 0.1x. Took the code from this module to write sort
+utility for PPT project, then brought changes back over. As a result the
 interface has changed slightly, mostly in regard to what letters are
 used for options, but there are also some key behavioral differences. If
 you need the old interface, the old module will remain on CPAN, but will
@@ -56,8 +56,8 @@ SYNOPSIS
 DESCRIPTION
     ***DANGER, WILL ROBINSON***
 
-    The interface has changed in some significant ways. See the section on
-    "HISTORY".
+    The interface has changed in some significant ways from 0.1x. See the
+    section on "HISTORY".
 
     This module sorts text files by lines (or records). Comparisons are
     based on one or more sort keys extracted from each line of input, and
@@ -84,6 +84,11 @@ DESCRIPTION
     interface may be offered in the future, as well. This interface is
     basically a mapping of the command-line options to the Unix sort
     utility.
+
+    `I' *INPUT*
+        Pass in the input file(s). This can be either a single string with
+        the filename, or an array reference containing multiple filename
+        strings.
 
     `c' Check that single input fle is ordered as specified by the arguments
         and the collating sequence of the current locale. No output is
@@ -284,8 +289,18 @@ TODO
     Better debugging and error reporting
     Performance hit with -u
     Do bytes instead of lines
-    Whoops, fix input via STDIN
+    Tests fail on non-ASCII locales.
 HISTORY
+    v0.91, Saturday, February 12, 2000
+        Closed all files in test.pl so they could be unlinked on some
+        platforms. (Hubert Toullec)
+
+        Documented `I' option. (Hubert Toullec)
+
+        Removed O_EXCL flag from `sort_file'.
+
+        Fixed bug in sorting multiple files. (Paul Eckert)
+
     v0.90, Friday, April 30, 1999
         Complete rewrite. Took the code from this module to write sort
         utility for PPT project, then brought changes back over. As a
@@ -350,22 +365,23 @@ HISTORY
 
 THANKS
     Mike Blazer <blazer@mail.nevalink.ru>, Vicki Brown <vlb@cfcl.com>, Tom
-    Christiansen <tchrist@perl.com>, Albert Dvornik <bert@mit.edu>, Gene
-    Hsu <gene@moreinfo.com>, Andrew M. Langmead <aml@world.std.com>, Brian
-    L. Matthews <blm@halcyon.com>, Rich Morin <rdm@cfcl.com>, Matthias
-    Neeracher <neeri@iis.ee.ethz.ch>, Miko O'Sullivan <miko@idocs.com>,
-    Tom Phoneix <rootbeer@teleport.com>, Gurusamy Sarathy
-    <gsar@activestate.com>.
+    Christiansen <tchrist@perl.com>, Albert Dvornik <bert@mit.edu>, Paul
+    Eckert <peckert@epicrealm.com>, Gene Hsu <gene@moreinfo.com>, Andrew
+    M. Langmead <aml@world.std.com>, Brian L. Matthews <blm@halcyon.com>,
+    Rich Morin <rdm@cfcl.com>, Matthias Neeracher <neeri@iis.ee.ethz.ch>,
+    Miko O'Sullivan <miko@idocs.com>, Tom Phoneix <rootbeer@teleport.com>,
+    Gurusamy Sarathy <gsar@activestate.com> Hubert Toullec
+    <Hubert.Toullec@wanadoo.fr>.
 
 AUTHOR
     Chris Nandor <pudge@pobox.com>, http://pudge.net/
 
-    Copyright (c) 1999 Chris Nandor. All rights reserved. This program is
+    Copyright (c) 2000 Chris Nandor. All rights reserved. This program is
     free software; you can redistribute it and/or modify it under the
     terms of the Artistic License, distributed with Perl.
 
 VERSION
-    v0.90, Friday, April 30, 1999
+    v0.91, Saturday, February 12, 2000
 
 SEE ALSO
     sort(1), locale, PPT project, <URL:http://language.perl.com/ppt/>.

@@ -1,17 +1,16 @@
 package File::Sort;
 use Carp;
-use Fcntl qw(O_RDONLY O_WRONLY O_EXCL O_CREAT);
+use Fcntl qw(O_RDONLY O_WRONLY O_CREAT);
 use Symbol qw(gensym);
 use strict;
 use locale;
 use vars qw($VERSION *sortsub *sort1 *sort2 *map1 *map2 %fh);
 
 require Exporter;
-use vars qw(@ISA @EXPORT @EXPORT_OK);
-@ISA = qw(Exporter);
-@EXPORT = ();
-@EXPORT_OK = qw(sort_file);
-$VERSION = '0.80';
+use vars qw(@ISA @EXPORT_OK);
+@ISA = 'Exporter';
+@EXPORT_OK = 'sort_file';
+$VERSION = '0.91';
 
 sub sort_file {
     my @args = @_;
@@ -80,7 +79,6 @@ sub _sort_file {
     # see big ol' mess below
     _make_sort_sub($opts);
 
-
     # only check to see if file is sorted
     if ($opts->{c}) {
         local *F;
@@ -142,7 +140,6 @@ sub _sort_file {
         foreach my $filein (@{$opts->{I}}) {
             local *F;
             my $count = 0;
-            @recs = ();
 
             _debug("Sorting file $filein ...\n") if $opts->{D};
 
@@ -180,19 +177,20 @@ sub _sort_file {
                 }
             }
 
-            # records leftover, didn't reach record limit
-            if (@recs) {
-                _debug("\Sorting leftover records ...\n") if $opts->{D};
-                _check_last(\@recs);
-                if ($opts->{K}) {
-                    local $^W;
-                    @recs = sort sort1 @recs;
-                } else {
-                    local $^W;
-                    @recs = map {$_->[0]} sort sortsub map &map1, @recs;
-                }
-            }
             close(F);
+        }
+
+        # records leftover, didn't reach record limit
+        if (@recs) {
+            _debug("\Sorting leftover records ...\n") if $opts->{D};
+            _check_last(\@recs);
+            if ($opts->{K}) {
+                local $^W;
+                @recs = sort sort1 @recs;
+            } else {
+                local $^W;
+                @recs = map {$_->[0]} sort sortsub map &map1, @recs;
+            }
         }
     }
 
@@ -233,7 +231,7 @@ sub _merge_files {
     # file and get a reference to it
     } elsif (! ref($file)) {
         my $tfh = gensym();
-        sysopen($tfh, $file, O_WRONLY|O_CREAT|O_EXCL)
+        sysopen($tfh, $file, O_WRONLY|O_CREAT)
             or die "Can't open `$file' for writing: $!";
         $file = $tfh;
     }
@@ -620,7 +618,7 @@ File::Sort - Sort a file or merge sort multiple files
 
 ***DANGER, WILL ROBINSON***
 
-The interface has changed in some significant ways.
+The interface has changed in some significant ways from 0.1x.
 See L<"HISTORY">.
 
 
@@ -653,6 +651,11 @@ sort utility.
 
 
 =over 4
+
+=item C<I> I<INPUT>
+
+Pass in the input file(s).  This can be either a single string with the
+filename, or an array reference containing multiple filename strings.
 
 =item C<c>
 
@@ -913,7 +916,7 @@ Exports C<sort_file> on request.
 
 =item Do bytes instead of lines
 
-=item Whoops, fix input via STDIN
+=item Tests fail on non-ASCII locales.
 
 =back
 
@@ -921,6 +924,18 @@ Exports C<sort_file> on request.
 =head1 HISTORY
 
 =over 4
+
+=item v0.91, Saturday, February 12, 2000
+
+Closed all files in test.pl so they could be unlinked on some
+platforms.  (Hubert Toullec)
+
+Documented C<I> option.  (Hubert Toullec)
+
+Removed O_EXCL flag from C<sort_file>.
+
+Fixed bug in sorting multiple files.  (Paul Eckert)
+
 
 =item v0.90, Friday, April 30, 1999
 
@@ -1005,6 +1020,7 @@ Mike Blazer E<lt>blazer@mail.nevalink.ruE<gt>,
 Vicki Brown E<lt>vlb@cfcl.comE<gt>,
 Tom Christiansen E<lt>tchrist@perl.comE<gt>,
 Albert Dvornik E<lt>bert@mit.eduE<gt>,
+Paul Eckert E<lt>peckert@epicrealm.comE<gt>,
 Gene Hsu E<lt>gene@moreinfo.comE<gt>,
 Andrew M. Langmead E<lt>aml@world.std.comE<gt>,
 Brian L. Matthews E<lt>blm@halcyon.comE<gt>,
@@ -1012,21 +1028,22 @@ Rich Morin E<lt>rdm@cfcl.comE<gt>,
 Matthias Neeracher E<lt>neeri@iis.ee.ethz.chE<gt>,
 Miko O'Sullivan E<lt>miko@idocs.comE<gt>,
 Tom Phoneix E<lt>rootbeer@teleport.comE<gt>,
-Gurusamy Sarathy E<lt>gsar@activestate.comE<gt>.
+Gurusamy Sarathy E<lt>gsar@activestate.comE<gt>
+Hubert Toullec E<lt>Hubert.Toullec@wanadoo.frE<gt>.
 
 
 =head1 AUTHOR
 
 Chris Nandor E<lt>pudge@pobox.comE<gt>, http://pudge.net/
 
-Copyright (c) 1999 Chris Nandor.  All rights reserved.  This program is
+Copyright (c) 2000 Chris Nandor.  All rights reserved.  This program is
 free software; you can redistribute it and/or modify it under the terms
 of the Artistic License, distributed with Perl.
 
 
 =head1 VERSION
 
-v0.80, Friday, April 30, 1999
+v0.91, Saturday, February 12, 2000
 
 
 =head1 SEE ALSO
