@@ -1,23 +1,229 @@
-Monday, January 5, 1998
+-----BEGIN PGP SIGNED MESSAGE-----
 
-This is File::Sort 0.11, for sorting files similarly to sort(1).  Written
+Sunday, January 31, 1999
+
+This is File::Sort 0.18, for sorting files similarly to sort(1).  Written
 primarily for MacPerl users who do not have sort(1) and because of memory
 limitations cannot sort files in memory, but works on all perls.
 
+See HISTORY below for changes.
+
 This archive can always be obtained from:
 
-    http://pudge.net/macperl/
     http://perl.com/CPAN/authors/id/CNANDOR/
     http://perl.com/CPAN/modules/by-module/File/
-
-Mac users: The file is a tarred, gzipped file.  Use Stuffit Expander 
-or a similar program to get at the archive.
 
 Please let me know how well it does(n't) work, and any changes you'd 
 like to see.
 
---
-Chris Nandor               pudge@pobox.com           http://pudge.net/
-%PGPKey=('B76E72AD',[1024,'0824 090B CE73 CA10  1FF7 7F13 8180 B6B6'])
-#==                    MacPerl: Power and Ease                     ==#
-#==    Publishing Date: Early 1998. http://www.ptf.com/macperl/    ==#
+#=======================================================================
+
+NAME
+    File::Sort - Sort a file or merge sort multiple files
+
+SYNOPSIS
+      use File::Sort qw(sort_file);
+      sort_file({
+        I=>[qw(file1_new file2_new)],
+        O=>'filex_new',
+        V=>1, Y=>1000, TF=>50, M=>1, U=>1, R=>1, N=>1,
+      });
+
+      sort_file('file1','file1_new',1,1000);
+
+DESCRIPTION
+    WARNING: This is probably going to be MUCH SLOWER than using sort(1)
+    that comes with most Unix boxes. This was developed primarily because
+    some perls (specifically, MacPerl) do not have access to potentially
+    infinite amounts of memory (thus they cannot necessarily slurp in a
+    text file of several megabytes), nor does everyone have access to
+    sort(1).
+
+    Here are some benchmarks that might be of interest (PowerBook G3/292
+    with 160MB RAM, VM on, and 100MB allocated to the MacPerl app). The
+    file was a mail file around 6MB. Note that once was with a CHUNK value
+    of 200,000 lines; Unix systems can get away with something like that
+    because of VM, while Mac OS systems cannot, unless you bump up the
+    memory allocation as done below. So inevitably you will get much
+    better performance with large files on Unix than you will on Mac OS.
+    C'est la vie.
+
+    Note that tests 2 and 3 cannot be performed on the given dataset when
+    MacPerl has a small amount of memory allocated (like 8MB). But when
+    MacPerl has 8MB allocated, the results for tests 1 and 4 are about the
+    same as when MacPerl has 100MB allocated, showing that the module is
+    doing its job properly. :)
+
+    NOTE: `sort` calls the MPW sort tool here, which has a slightly
+    different default sort order than `sort_file' does.
+
+      #!perl -w
+      use File::Sort qw(sort_file);
+      use Benchmark;
+      timethese(10,{
+        1=>q+`sort -o $ARGV[0].1 $ARGV[0]`+,
+        2=>q+open(F,$ARGV[0]);open(F1,">$ARGV[0].4");@f=<F>;print F1 sort @f+,
+        3=>q+sort_file({I=>$ARGV[0],O=>"$ARGV[0].2",Y=>200000})+,
+        4=>q+sort_file({I=>$ARGV[0],O=>"$ARGV[0].3"})+,
+      })
+
+      Benchmark: timing 10 iterations of 1, 2, 3, 4...
+             1: 185 secs (185.65 usr  0.00 sys = 185.65 cpu)
+             2: 152 secs (152.43 usr  0.00 sys = 152.43 cpu)
+             3: 195 secs (195.77 usr  0.00 sys = 195.77 cpu)
+             4: 274 secs (274.58 usr  0.00 sys = 274.58 cpu)
+
+    That all having been noted, there are plans to have this module use
+    sort(1) if it is available. Still.
+
+    WARNING Part Deux: This module is subject to change in every way,
+    including in the fact that it exists. But it seems much less subject
+    to change now than it did at first.
+
+    There are two primary syntaxes:
+
+      sort_file(FILEIN, FILEOUT [, VERBOSE, CHUNK]);
+
+    This will sort FILEIN to FILEOUT. The FILEOUT can be the same as the
+    FILEIN, but it is required. VERBOSE is off by default. CHUNK is how
+    many lines to deal with at a time (as opposed to how much memory to
+    deal with at a time, like sort(1); this might change). The default for
+    Y is 20,000; increase for better performance, decrease if you run out
+    of memory.
+
+      sort_file({
+        I=>FILEIN, O=>FILEOUT, V=>VERBOSE, 
+        Y=>CHUNK, TF=>FILE_LIMIT, 
+        M=>MERGE_ONLY, U=>UNIQUE_ONLY, 
+        R=>REVERSE, N=>NUMERIC,
+        D=>DELIMITER, F=>FIELD,
+        S=>SORT_THING,
+      });
+
+    This time, FILEIN can be a filename or an reference to an array of
+    filenames. If MERGE_ONLY is true, then `File::Sort' will assume the
+    files on input are already sorted. UNIQUE_ONLY, if true, only outputs
+    unique lines, removing all others.
+
+    FILE_LIMIT is the system's limit to how many files can be opened at
+    once. A default value of 40 is given in the module. The standard port
+    of perl5.004_02 for Win32 has a limit of 50 open files, so 40 is safe.
+    To improve performance increase the number, and if you are getting
+    failures, try decreasing it. If you get a warning in `_writeTemp',
+    from the call to `_getTemp', you've probably hit your limit.
+
+    If given a DELIMITER (which will be passed through `quotemeta'), then
+    each line will be sorted on the nth FIELD (default FIELD is 0). If
+    sorting by field, it is best if the last field in the line, if used
+    for sorting, has DELIMITER at the end of the field (i.e., the field
+    ends in DELIMITER, not newline).
+
+    SORT_THING is so you can pass in any arbitrary sort thing you want,
+    where $SORT is the token representing your $a and $b. For instance,
+    these are equivalent:
+
+      # {$a cmp $b}
+      sort_file({I=>'b', O=>'b.out'});
+      sort_file({I=>'b', O=>'b.out', S=>'$SORT'});
+
+      # {(split(/\|/, $a))[1] cmp (split(/\|/, $b))[1]}
+      sort_file({I=>'b', O=>'b.out', D=>'|', IDX=>1});
+      sort_file({I=>'b', O=>'b.out', S=>'(split(/\\|/, $SORT))[1]'});
+
+    SORT_THING will still need R and N for reverse and numeric sorts.
+
+    Note that if FILEIN does not have a linebreak terminating the last
+    line, a native newline character will be added to it.
+
+EXPORT
+    Exports `sort_file' on request. `sortFile' is no longer the function
+    name.
+
+BUGS
+    None! :) I plan on making CHUNK and FILE_LIMIT more intelligent
+    somehow. I did make the default for CHUNK larger, though.
+
+    Also, I will have the module use sort(1) if it is available.
+
+THANKS
+    Mike Blazer <blazer@mail.nevalink.ru>, Vicki Brown <vlb@cfcl.com>,
+    Gene Hsu <gene@moreinfo.com>, Andrew M. Langmead <aml@world.std.com>,
+    Brian L. Matthews <blm@halcyon.com>, Rich Morin <rdm@cfcl.com>,
+    Matthias Neeracher <neeri@iis.ee.ethz.ch>, Miko O'Sullivan
+    <miko@idocs.com>, Tom Phoneix <rootbeer@teleport.com>, Gurusamy
+    Sarathy <gsar@activestate.com>.
+
+AUTHOR
+    Chris Nandor <pudge@pobox.com> http://pudge.net/
+
+    Copyright (c) 1998 Chris Nandor. All rights reserved. This program is
+    free software; you can redistribute it and/or modify it under the same
+    terms as Perl itself.
+
+HISTORY
+    v0.18 (31 January 1998)
+        Tests 3 and 4 failed because we hit the open file limit in the
+        standard Windows port of perl5.004_02 (50). Adjusted the default
+        for total number of temp files from 50 to 40 (leave room for other
+        open files), changed docs. (Mike Blazer, Gurusamy Sarathy)
+
+    v0.17 (30 December 1998)
+        Fixed bug in `_mergeFiles' that tried to `open' a passed
+        `IO::File' object.
+
+        Fixed up docs and did some more tests and benchmarks.
+
+    v0.16 (24 December 1998)
+        One year between releases was too long. I made changes Miko
+        O'Sullivan wanted, and I didn't even know I had made them.
+
+        Also now use `IO::File' to create temp files, so the TMPDIR option
+        is no longer supported. Hopefully made the whole thing more robust
+        and faster, while supporting more options for sorting, including
+        delimited sorts, and arbitrary sorts.
+
+        Made CHUNK default a lot larger, which improves performance. On
+        low-memory systems, or where (e.g.) the MacPerl binary is not
+        allocated much RAM, it might need to be lowered.
+
+    v0.11 (04 January 1998)
+        More cleanup; fixed special case of no linebreak on last line;
+        wrote test suite; fixed warning for redefined subs (sort1 and
+        sort2).
+
+    v0.10 (03 January 1998)
+        Some cleanup; made it not subject to system file limitations;
+        separated many parts out into separate functions.
+
+    v0.03 (23 December 1997)
+        Added reverse and numeric sorting options.
+
+    v0.02 (19 December 1997)
+        Added unique and merge-only options.
+
+    v0.01 (18 December 1997)
+        First release.
+
+VERSION
+    Version 0.18 (31 January 1998)
+
+SEE ALSO
+    sort(1).
+
+#=======================================================================
+
+- -- 
+Chris Nandor          mailto:pudge@pobox.com         http://pudge.net/
+%PGPKey = ('B76E72AD', [1024, '0824090B CE73CA10  1FF77F13 8180B6B6'])
+
+
+-----BEGIN PGP SIGNATURE-----
+Version: PGPfreeware 5.0 for non-commercial use <http://www.pgp.com>
+Charset: noconv
+
+iQCVAwUBNrSCtChcZja3bnKtAQHF3wP9FFvcR4VCPaE8zqwMURnOsIE1O4Ci4Hf7
+yoeElcIcFn11G0JfCsXNzJBrIfV6e5X2mB7YLlGpOi63/0oMfvq8k0qLpf6DLv+N
+oGP/ud4DX4uZ58gl9zpJEkQPEK9b2vW+hZuo2TqZS3ZwIUK5Z9wGErrjRj+vAveW
+EYCpdG8aJxU=
+=eQ6Z
+-----END PGP SIGNATURE-----
